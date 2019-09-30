@@ -14,7 +14,7 @@ body {
 
       .sidebar {
         position: absolute;
-        width: 33.3333%;
+        width: 23.3333%;
         height: 100%;
         top: 0;
         left: 0;
@@ -28,8 +28,8 @@ body {
 
       .map {
         position: absolute;
-        left: 33.3333%;
-        width: 66.6666%;
+        left: 23.3333%;
+        width: 76.6666%;
         top: 0;
         bottom: 0;
       }

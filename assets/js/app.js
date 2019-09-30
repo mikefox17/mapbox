@@ -223,29 +223,126 @@ var stores = {
 };
 // This adds the stores to the map
 map.on("load", function(e) {
+  // This is where your '.addLayer()' used to be, instead add only the source without styling a layer
   map.addSource("places", {
     type: "geojson",
     data: stores
   });
+  // Initialize the list
+  buildLocationList(stores);
 
-  buildLocationList(stores); // Initialize the list
-  map.addControl(
-    new mapboxgl.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true
-      },
-      trackUserLocation: true
-    })
-  );
+  var geolocate = new mapboxgl.GeolocateControl();
 
-  var geocoder = new MapboxGeocoder({
+  map.addControl(geolocate);
+
+  geolocate.on("geolocate", function(e) {
+    var lon = e.coords.longitude;
+    var lat = e.coords.latitude;
+    var position = [lon, lat];
+    console.log("Youre current position is:  " + position);
+  });
+
+  geocoder = new MapboxGeocoder({
     accessToken: mapboxgl.accessToken,
     mapboxgl: mapboxgl,
     marker: false,
-    placeholder: "Input your location",
     bbox: [-77.210763, 38.803367, -76.853675, 39.052643]
   });
+
   map.addControl(geocoder, "top-left");
+
+  map.addSource("single-point", {
+    type: "geojson",
+    data: {
+      type: "FeatureCollection",
+      features: [] // Notice that initially there are no features
+    }
+  });
+
+  map.addLayer({
+    id: "point",
+    source: "single-point",
+    type: "circle",
+    paint: {
+      "circle-radius": 10,
+      "circle-color": "#007cbf",
+      "circle-stroke-width": 3,
+      "circle-stroke-color": "#fff"
+    }
+  });
+
+  geocoder.on("result", function(ev) {
+    var searchResult = ev.result.geometry;
+    map.getSource("single-point").setData(searchResult);
+
+    var options = { units: "miles" };
+    stores.features.forEach(function(store) {
+      Object.defineProperty(store.properties, "distance", {
+        value: turf.distance(searchResult, store.geometry, options),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    });
+
+    stores.features.sort(function(a, b) {
+      if (a.properties.distance > b.properties.distance) {
+        return 1;
+      }
+      if (a.properties.distance < b.properties.distance) {
+        return -1;
+      }
+      // a must be equal to b
+      return 0;
+    });
+
+    var listings = document.getElementById("listings");
+    while (listings.firstChild) {
+      listings.removeChild(listings.firstChild);
+    }
+
+    buildLocationList(stores);
+
+    function sortLonLat(storeIdentifier) {
+      var lats = [
+        stores.features[storeIdentifier].geometry.coordinates[1],
+        searchResult.coordinates[1]
+      ];
+      var lons = [
+        stores.features[storeIdentifier].geometry.coordinates[0],
+        searchResult.coordinates[0]
+      ];
+
+      var sortedLons = lons.sort(function(a, b) {
+        if (a > b) {
+          return 1;
+        }
+        if (a.distance < b.distance) {
+          return -1;
+        }
+        return 0;
+      });
+      var sortedLats = lats.sort(function(a, b) {
+        if (a > b) {
+          return 1;
+        }
+        if (a.distance < b.distance) {
+          return -1;
+        }
+        return 0;
+      });
+
+      map.fitBounds(
+        [[sortedLons[0], sortedLats[0]], [sortedLons[1], sortedLats[1]]],
+        {
+          padding: 100
+        }
+      );
+    }
+
+    sortLonLat(0);
+    createPopUp(stores.features[0]);
+  });
 });
 
 stores.features.forEach(function(marker, i) {
@@ -315,6 +412,11 @@ function buildLocationList(data) {
     if (prop.phone) {
       details.innerHTML += " &middot; " + prop.phoneFormatted;
     }
+    if (prop.distance) {
+      var roundedDistance = Math.round(prop.distance * 100) / 100;
+      details.innerHTML +=
+        "<p><strong>" + roundedDistance + " miles away</strong></p>";
+    }
 
     // Add rounded distance here
 
@@ -330,4 +432,5 @@ function buildLocationList(data) {
     });
   }
 }
+
 map.scrollZoom.enable();
