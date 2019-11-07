@@ -434,3 +434,5 @@ function buildLocationList(data) {
 }
 
 map.scrollZoom.enable();
+
+console.log("HELLO FROM APP.JS");
