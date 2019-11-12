@@ -512,7 +512,7 @@
             country: "United States",
             postalCode: "27514",
             state: "NC",
-            website: "www.wildbird.com/hil"
+            website: "https://www.wildbird.com/hil"
           }
         }
       ]
@@ -629,7 +629,10 @@
           });
 
           map.fitBounds(
-            [[sortedLons[0], sortedLats[0]], [sortedLons[1], sortedLats[1]]],
+            [
+              [sortedLons[0], sortedLats[0]],
+              [sortedLons[1], sortedLats[1]]
+            ],
             {
               padding: 100
             }
@@ -705,17 +708,45 @@
         link.className = "title";
         link.dataPosition = i;
         link.innerHTML = prop.address;
-        link.innerHTML = prop.website;
-
+        // link.innerHTML = `<a href=${prop.website}>` + "Visit Website" + "</a>";
+        // " &middot; " + prop.phoneFormatted;
         var details = listing.appendChild(document.createElement("div"));
-        details.innerHTML = prop.city;
+        details.innerHTML = "<strong>" + "City:  </strong>" + prop.city + "   ";
         if (prop.phone) {
-          details.innerHTML += " &middot; " + prop.phoneFormatted;
+          details.innerHTML +=
+            "<br/>" +
+            "<strong>" +
+            "Telephone:  </strong>" +
+            "<u>" +
+            `<a href="tel:${prop.phoneFormatted}">` +
+            prop.phoneFormatted +
+            "</a>" +
+            "</u>";
+        }
+        if (prop.website) {
+          details.innerHTML +=
+            "<br/>" +
+            "<strong>" +
+            "Website:  </strong>" +
+            "<u>" +
+            `<a href=${prop.website}>` +
+            prop.website +
+            "</a>";
         }
         if (prop.distance) {
           var roundedDistance = Math.round(prop.distance * 100) / 100;
           details.innerHTML +=
             "<p><strong>" + roundedDistance + " miles away</strong></p>";
+        }
+        if (prop.address) {
+          details.innerHTML +=
+            "<br/>" +
+            "<strong>" +
+            "Get directions:  </strong>" +
+            "<u>" +
+            `<a href="http://maps.google.com/?q=${prop.address}" target=_blank">` +
+            prop.address +
+            "</a>";
         }
 
         // Add rounded distance here
